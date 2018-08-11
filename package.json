@@ -1,0 +1,22 @@
+{
+  "name": "minetron",
+  "version": "1.0.0",
+  "description": "Minetron Launcher",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Himmelt/Minetron.git"
+  },
+  "author": "Himmelt",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Himmelt/Minetron/issues"
+  },
+  "homepage": "https://github.com/Himmelt/Minetron#readme",
+  "devDependencies": {
+    "electron": "^3.0.0-beta.4"
+  }
+}
