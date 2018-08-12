@@ -1,49 +1,121 @@
-const { app, BrowserWindow } = require('electron')
+'use strict';
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let win
+const electron = require('electron');
+const execFile = require('child_process').execFile;
+const mineMc = require('./assets/js/minecraft');
+const Config = require('./assets/js/config').Config;
+const app = electron.app;
+const BrowserWindow = electron.BrowserWindow;
+// 进程通讯
+const ipcMain = electron.ipcMain;
+// 系统托盘
+const Tray = electron.Tray;
+const Menu = electron.Menu;
+// 对窗口对象使用全局引用,否则窗口会随着js的内存回收而关闭.
+let mainWindow;
+let config = new Config(app.getPath('userData') + "\\config.json");
 
-function createWindow() {
-    // 创建浏览器窗口。
-    win = new BrowserWindow({ width: 800, height: 600 })
-
-    // 然后加载应用的 index.html。
-    win.loadFile('index.html')
-
-    // 打开开发者工具
-    win.webContents.openDevTools()
-
-    // 当 window 被关闭，这个事件会被触发。
-    win.on('closed', () => {
-        // 取消引用 window 对象，如果你的应用支持多窗口的话，
-        // 通常会把多个 window 对象存放在一个数组里面，
-        // 与此同时，你应该删除相应的元素。
-        win = null
-    })
-}
-
-// Electron 会在初始化后并准备
-// 创建浏览器窗口时，调用这个函数。
-// 部分 API 在 ready 事件触发后才能使用。
-app.on('ready', createWindow)
-
-// 当全部窗口关闭时退出。
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
+        width: 800, height: 600,
+        // minWidth: 400, minHeight: 300,
+        transparent: false,
+        frame: false,
+        backgroundColor: '#ffffff',
+        show: false
+    });
+    mainWindow.loadURL(`file://${__dirname}/assets/index.html`);
+    // mainWindow.on('resize',()=>{});
+    // mainWindow.on('move',()=>{});
+    // mainWindow.on('maximize',()=>{});
+    // mainWindow.on('unmaximize',()=>{});
+    // mainWindow.on('minimize',()=>{});
+    // mainWindow.on('restore',()=>{});
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
+        mainWindow.webContents.openDevTools();
+    });
+});
 app.on('window-all-closed', () => {
-    // 在 macOS 上，除非用户用 Cmd + Q 确定地退出，
-    // 否则绝大部分应用及其菜单栏会保持激活。
+    // 对于OS X系统,应用和相应的菜单栏会一直激活直到用户通过Cmd + Q显式退出
     if (process.platform !== 'darwin') {
-        app.quit()
+        if (appTray) appTray.destroy();
+        app.quit();
     }
-})
-
+});
 app.on('activate', () => {
-    // 在macOS上，当单击dock图标并且没有其他窗口打开时，
-    // 通常在应用程序中重新创建一个窗口。
-    if (win === null) {
-        createWindow()
+    // 对于OS X系统,当dock图标被点击后会重新创建一个app窗口,并且不会有其他窗口打开
+    if (mainWindow === null) {
+        createWindow();
     }
-})
+});
+app.on('quit', () => {
+    config.save();
+});
 
-// 在这个文件中，你可以续写应用剩下主进程代码。
-// 也可以拆分成几个文件，然后用 require 导入。
+// 在这里可以继续应用的主要程序代码,也可以放置于单独文件中,在此 require 即可.
+let appTray = null;
+let isRunning = false;
+let mine;
+
+// 进程通讯监听
+ipcMain.on('put-in-tray', (event) => {
+    if (appTray && !appTray.isDestroyed()) {
+        mainWindow.hide();
+        return;
+    }
+    appTray = new Tray('./assets/img/icon.ico');
+    const contextMenu = Menu.buildFromTemplate([
+        {
+            label: '显示',
+            click: () => {
+                mainWindow.show();
+                appTray.destroy();
+            }
+        },
+        {
+            label: 'Remove',
+            click: function () {
+                event.sender.send('tray-removed');
+                appTray.destroy();
+            }
+        }]);
+    appTray.setToolTip('空之境界');
+    appTray.setContextMenu(contextMenu);
+    appTray.on('double-click', () => {
+        mainWindow.show();
+        appTray.destroy();
+    });
+    mainWindow.hide();
+});
+ipcMain.on('remove-tray', () => {
+    appTray.destroy()
+});
+ipcMain.on('app-close', () => {
+    app.quit();
+});
+ipcMain.on('app-mini', () => {
+    BrowserWindow.getFocusedWindow().minimize();
+});
+ipcMain.on('launch-game', () => {
+    if (!isRunning) {
+        console.log('run');
+        mine = execFile('javaw.exe', mineMc.launch('minecraft/.minecraft', 'Him',
+            '14233482b8dbad97617757a5c31d5872', '1.10.2', '2048m', 'qwq'));
+        isRunning = true;
+        console.log('mine:', mine.spawnargs);
+        mine.on('exit', (code) => {
+            console.log('exit!!!!', code);
+            isRunning = false;
+        });
+    }
+});
+ipcMain.on('launch-exit', () => {
+    console.log('kill???');
+    //mine.kill();
+});
+ipcMain.on('config', (event, args) => {
+});

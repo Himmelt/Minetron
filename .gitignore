@@ -1,2 +1,10 @@
+/.idea
 /.vscode
 /node_modules
+*.js
+*.js.map
+*.css
+*.css.map
+!main.js
+!/assets/js/*.js
+!/assets/style/*.js

@@ -1,5 +1,6 @@
 {
   "name": "minetron",
+  "displayname": "Minetron",
   "version": "1.0.0",
   "description": "Minetron Launcher",
   "main": "main.js",
@@ -16,7 +17,15 @@
     "url": "https://github.com/Himmelt/Minetron/issues"
   },
   "homepage": "https://github.com/Himmelt/Minetron#readme",
+  "dependencies": {
+    "antd": "^3.8.1",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2"
+  },
   "devDependencies": {
-    "electron": "^3.0.0-beta.4"
+    "babel-cli": "^6.26.0",
+    "babel-preset-react": "^6.24.1",
+    "electron": "^3.0.0-beta.4",
+    "node-sass": "^4.9.3"
   }
 }
